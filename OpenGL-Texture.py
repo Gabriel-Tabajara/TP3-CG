@@ -28,6 +28,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from Ponto import Ponto
+import Objeto3d
 import numpy as np
 from PIL import Image
 import time
@@ -40,7 +41,6 @@ look_x = 5
 look_y = 1
 look_z = -5
 
-
 angle = 60.0
 obs_x = 9.5
 obs_z = 2.4
@@ -50,9 +50,13 @@ lz = -math.cos(angle)
 tanque_x = 0
 tanque_z = 0
 
+cactus = Objeto3d.Tri("./objects/cactus.tri")
+casa = Objeto3d.Tri("./objects/casa.tri")
+moto = Objeto3d.Tri("./objects/moto.tri")
+dog = Objeto3d.Tri("./objects/dog.tri")
+
 parede = []
 parede1 = []
-
 for x in range(0, 25):
     linha = []
     for y in range(0, 15):
@@ -155,7 +159,6 @@ def useTexture (NroDaTextura: int):
 #  Inicializa os parÃ¢metros globais de OpenGL
 #/ **********************************************************************
 def init():
-    
     # Define a cor do fundo da tela (BRANCO) 
     glClearColor(0.5, 0.5, 0.5, 1.0)
 
@@ -359,11 +362,18 @@ def display():
     global angulo
     global pos_x, pos_y, pos_z
     global look_x, look_y, look_z
+    global dog
     # Limpa a tela com  a cor de fundo
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     defineLuz()
     posicUser()
+
+    # drawObj(cactus)
+    # glScalef(0.5,0.5,0.5)
+    drawObj(dog)
+    # glScalef(2,2,2)
+
 
     glMatrixMode(GL_MODELVIEW)
     
@@ -407,8 +417,9 @@ def animate():
     
     if AccumDeltaT > 1.0/30:  # fixa a atualizaÃ§Ã£o da tela em 30
         AccumDeltaT = 0
+        # print(nFrames)
+        nFrames = 0
         glutPostRedisplay()
-    print(nFrames)
     
 
 # **********************************************************************
@@ -483,6 +494,8 @@ def mouseMove(x: int, y: int):
     glutPostRedisplay()
 #**********************************************************************
 
+def drawObj(obj:Objeto3d.Tri):
+    obj.draw()
 
 # ***********************************************************************************
 # Programa Principal
