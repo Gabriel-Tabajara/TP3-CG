@@ -50,7 +50,12 @@ lz = -math.cos(angle)
 tanque_x = 0
 tanque_z = 0
 anguloTanque = 0
+lxTanque =  math.sin(anguloTanque)
+lzTanque =  math.cos(anguloTanque) 
 mudou = False
+
+articulacao_1 = 0
+articulacao_2 = 0
 
 cactus = Objeto3d.Tri("./objects/cactus.tri")
 casa = Objeto3d.Tri("./objects/casa.tri")
@@ -342,10 +347,11 @@ def desenhaPiso():
     glPopMatrix()
 
 def desenharTanque():
-    global tanque_x, tanque_z, anguloTanque
+    global tanque_x, tanque_z, anguloTanque, articulacao_1, articulacao_2
     glPushMatrix()
+    glNormal(0,1,0)
+    glTranslatef(tanque_x, 0.5, tanque_z)
     glRotatef(anguloTanque, 0, 1, 0)
-    glTranslatef(0, 0.5, tanque_z)
     desenhaCubo()
     glTranslatef(1,0,0)
     desenhaCubo()
@@ -360,16 +366,16 @@ def desenharTanque():
     
     glPushMatrix()
     glColor(1,0,0)
-    glTranslatef(-0.5,1.5,0)
-    glRotatef(90,1,0,0)
+    glTranslatef(-0.5,0.3,0)
+    glRotatef(270 + articulacao_1,1,0,0)
+    glPushMatrix()
     glScalef(0.3,0.3,1)
     desenhaCilindro()
     glPopMatrix()
     
-    glPushMatrix()
     glColor(1,1,0)
-    glTranslatef(-0.5,2.5,0)
-    glRotatef(90,1,0,0)
+    glTranslatef(0,0,0.8)
+    glRotatef(articulacao_2,1,0,0)
     glScalef(0.16,0.16,1)
     desenhaCilindro()
     glPopMatrix()
@@ -392,26 +398,26 @@ def display():
     defineLuz()
     posicUser()
 
-    glPushMatrix()
-    glTranslatef(5,0,35)
-    glScalef(0.1,0.1,0.1)
-    drawObj(cactus)
-    glPopMatrix()
+    # glPushMatrix()
+    # glTranslatef(5,0,35)
+    # glScalef(0.1,0.1,0.1)
+    # drawObj(cactus)
+    # glPopMatrix()
     
     # for i in range(0,20):
     #     glPushMatrix()
     #     glTranslatef(1.5*i + 13,0,42)
     #     glScalef(0.3,0.3,0.3)
     #     drawObj(dog)
-    #     glScalef(2,2,2)
+    #     glScalef(2,2,2)``
     #     glPopMatrix()
     
-    glPushMatrix()
-    glTranslatef(13,0,42)
-    glScalef(0.3,0.3,0.3)
-    drawObj(dog)
-    glScalef(2,2,2)
-    glPopMatrix()
+    # glPushMatrix()
+    # glTranslatef(13,0,42)
+    # glScalef(0.3,0.3,0.3)
+    # drawObj(dog)
+    # glScalef(2,2,2)
+    # glPopMatrix()
 
 
     glMatrixMode(GL_MODELVIEW)
@@ -468,9 +474,11 @@ def animate():
 ESCAPE = b'\x1b'
 def keyboard(*args):
     global zoom, look_x, look_z, lx, angle, lz, obs_x, obs_z
-    global tanque_x, tanque_z, anguloTanque
+    global tanque_x, tanque_z, anguloTanque, lxTanque, lzTanque
     global mudou
+    global articulacao_1, articulacao_2
     #print (args)
+    calculaAngulo = False
     # If escape is pressed, kill everything.
 
     if args[0] == ESCAPE:   # Termina o programa qdo
@@ -483,32 +491,49 @@ def keyboard(*args):
         obs_x -= lx 
         obs_z -= lz
     if args[0] == b'a':
-        obs_x += lx
-        obs_z -= lz
+        articulacao_1 += 2
+        pass
+    if args[0] == b'A':
+        articulacao_1 -= 2
+        pass
+    if args[0] == b'b':
+        articulacao_2 += 2
+        pass
+    if args[0] == b'B':
+        articulacao_2 -= 2
         pass
     if args[0] == b'd':
         pass
     if args[0] == b' ':
         init()
     if args[0] == b't':
-        if tanque_z < 47:
-            tanque_z += 1
+        tanque_z += 0.18*lzTanque
+        tanque_x += 0.18*lxTanque
     if args[0] == b'g':
-        if tanque_z > 0:
-            tanque_z -= 1     
+        tanque_z -= 0.18*lzTanque
+        tanque_x -= 0.18*lxTanque
     if args[0] == b'f':
-        anguloTanque += 3
-        tanque_z = 0
-        # if tanque_x < 23:
-        #     tanque_x += 1
+        anguloTanque += 1
+        calculaAngulo = True
     if args[0] == b'h':
-        anguloTanque -= 3
-        tanque_z = 0
+        anguloTanque -= 1
+        calculaAngulo = True
+        
+
+    if calculaAngulo:   
+        lxTanque =   math.sin(anguloTanque*math.pi/180)
+        lzTanque =   math.cos(anguloTanque*math.pi/180)
+        # tanque_z = 0
         # if tanque_x > 0:
         #     tanque_x -= 1
     if args[0] == b'i':
         image.show()
 
+    print('--------------')
+    print(anguloTanque)
+    print(lxTanque)
+    print(lzTanque)
+    print('--------------')
     # ForÃ§a o redesenho da tela
     glutPostRedisplay()
 
