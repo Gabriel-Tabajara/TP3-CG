@@ -49,6 +49,8 @@ lz = -math.cos(angle)
 
 tanque_x = 0
 tanque_z = 0
+anguloTanque = 0
+mudou = False
 
 cactus = Objeto3d.Tri("./objects/cactus.tri")
 casa = Objeto3d.Tri("./objects/casa.tri")
@@ -251,7 +253,10 @@ def defineLuz():
 def desenhaCubo():
     glutSolidCube(1)
 
-
+def desenhaCilindro():
+    glutSolidCylinder(
+        0.5,1,20,20
+    )
 
 # **********************************************************************
 # void desenhaLadrilho(int corBorda, int corDentro)
@@ -337,9 +342,10 @@ def desenhaPiso():
     glPopMatrix()
 
 def desenharTanque():
-    global tanque_x, tanque_z
+    global tanque_x, tanque_z, anguloTanque
     glPushMatrix()
-    glTranslatef(tanque_x, 0.5, tanque_z)
+    glRotatef(anguloTanque, 0, 1, 0)
+    glTranslatef(0, 0.5, tanque_z)
     desenhaCubo()
     glTranslatef(1,0,0)
     desenhaCubo()
@@ -351,6 +357,22 @@ def desenharTanque():
     desenhaCubo()
     glTranslatef(1,0,0)
     desenhaCubo()
+    
+    glPushMatrix()
+    glColor(1,0,0)
+    glTranslatef(-0.5,1.5,0)
+    glRotatef(90,1,0,0)
+    glScalef(0.3,0.3,1)
+    desenhaCilindro()
+    glPopMatrix()
+    
+    glPushMatrix()
+    glColor(1,1,0)
+    glTranslatef(-0.5,2.5,0)
+    glRotatef(90,1,0,0)
+    glScalef(0.16,0.16,1)
+    desenhaCilindro()
+    glPopMatrix()
     glPopMatrix()
 
 
@@ -361,6 +383,7 @@ def desenharTanque():
 def display():
     global angulo
     global pos_x, pos_y, pos_z
+    global tanque_z
     global look_x, look_y, look_z
     global dog
     # Limpa a tela com  a cor de fundo
@@ -369,20 +392,36 @@ def display():
     defineLuz()
     posicUser()
 
-    # drawObj(cactus)
-    # glScalef(0.5,0.5,0.5)
+    glPushMatrix()
+    glTranslatef(5,0,35)
+    glScalef(0.1,0.1,0.1)
+    drawObj(cactus)
+    glPopMatrix()
+    
+    # for i in range(0,20):
+    #     glPushMatrix()
+    #     glTranslatef(1.5*i + 13,0,42)
+    #     glScalef(0.3,0.3,0.3)
+    #     drawObj(dog)
+    #     glScalef(2,2,2)
+    #     glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(13,0,42)
+    glScalef(0.3,0.3,0.3)
     drawObj(dog)
-    # glScalef(2,2,2)
+    glScalef(2,2,2)
+    glPopMatrix()
 
 
     glMatrixMode(GL_MODELVIEW)
     
 
-    glColor3f(0.0,0.5,0.0) # Amarelo
-    glPushMatrix()
-    glTranslatef(look_x, look_y, look_z)
-    desenhaCubo()
-    glPopMatrix()
+    # glColor3f(0.0,0.5,0.0) # Amarelo
+    # glPushMatrix()
+    # glTranslatef(look_x, look_y, look_z)
+    # desenhaCubo()
+    # glPopMatrix()
 
     desenhaPiso()
     desenhaParede()
@@ -429,7 +468,8 @@ def animate():
 ESCAPE = b'\x1b'
 def keyboard(*args):
     global zoom, look_x, look_z, lx, angle, lz, obs_x, obs_z
-    global tanque_x, tanque_z
+    global tanque_x, tanque_z, anguloTanque
+    global mudou
     #print (args)
     # If escape is pressed, kill everything.
 
@@ -457,11 +497,15 @@ def keyboard(*args):
         if tanque_z > 0:
             tanque_z -= 1     
     if args[0] == b'f':
-        if tanque_x < 23:
-            tanque_x += 1
+        anguloTanque += 3
+        tanque_z = 0
+        # if tanque_x < 23:
+        #     tanque_x += 1
     if args[0] == b'h':
-        if tanque_x > 0:
-            tanque_x -= 1
+        anguloTanque -= 3
+        tanque_z = 0
+        # if tanque_x > 0:
+        #     tanque_x -= 1
     if args[0] == b'i':
         image.show()
 
@@ -502,7 +546,7 @@ def drawObj(obj:Objeto3d.Tri):
 # ***********************************************************************************
 
 glutInit(sys.argv)
-glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH | GLUT_RGB)
+glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_RGB)
 glutInitWindowPosition(0, 0)
 
 glutInitWindowSize(1920, 1080)
@@ -516,8 +560,8 @@ glutReshapeFunc(reshape)
 glutKeyboardFunc(keyboard)
 glutSpecialFunc(arrow_keys)
 
-#glutMouseFunc(mouse)
-#glutMotionFunc(mouseMove)
+# glutMouseFunc(mouse)
+# glutMotionFunc(mouseMove)
 
 
 try:
