@@ -44,7 +44,8 @@ class Ponto:
     def __mul__(self, other: int):
             x = self.x * other
             y = self.y * other
-            return Ponto(x, y)
+            z = self.z * other
+            return Ponto(x, y, z)
     
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Ponto):

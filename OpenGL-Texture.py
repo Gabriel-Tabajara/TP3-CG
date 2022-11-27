@@ -31,7 +31,10 @@ from Ponto import Ponto
 import Objeto3d
 import numpy as np
 from PIL import Image
+from Bezier import Bezier
 import time
+
+bezier = Bezier(Ponto(0,0,0), Ponto(0,15,15), Ponto(0,0,30))
 
 image = None
 texturas = []
@@ -41,11 +44,16 @@ look_x = 5
 look_y = 1
 look_z = -5
 
+FORCA = 25
+
 angle = 60.0
 obs_x = 9.5
 obs_z = 2.4
+obs_y = 0
 lx =  math.sin(angle)
 lz = -math.cos(angle)
+
+atirando = False
 
 tanque_x = 0
 tanque_z = 0
@@ -54,7 +62,7 @@ lxTanque =  math.sin(anguloTanque)
 lzTanque =  math.cos(anguloTanque) 
 mudou = False
 
-articulacao_1 = 0
+articulacao_1 = -45
 articulacao_2 = 0
 
 cactus = Objeto3d.Tri("./objects/cactus.tri")
@@ -183,7 +191,7 @@ def init():
 #
 # **********************************************************************
 def posicUser():
-    global zoom, look_x, look_y, look_z, obs_z, obs_x, lz, lx
+    global zoom, look_x, look_y, look_z, obs_z, obs_x, obs_y, lz, lx
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity() 
     gluPerspective(60,AspectRatio,0.01,5000) # Projecao perspectiva
@@ -191,7 +199,7 @@ def posicUser():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     gluLookAt(obs_x,    look_y,  obs_z,
-              obs_x+lx, look_y,  obs_z+lz,
+              obs_x+lx*10, look_y+obs_y,  obs_z+lz*10,
               0,1.0,0) 
 
  
@@ -263,6 +271,11 @@ def desenhaCilindro():
         0.5,1,20,20
     )
 
+def desenhaBala(x,y,z):
+    glPushMatrix()
+    glTranslate(x,y,z)
+    glutSolidSphere(0.5,20,20)
+    glPopMatrix()
 # **********************************************************************
 # void desenhaLadrilho(int corBorda, int corDentro)
 # Desenha uma celula do piso.
@@ -346,8 +359,12 @@ def desenhaPiso():
         glTranslated(1, 0, 0)
     glPopMatrix()
 
+
+passos = 0
+bezierTiro = None
+jaPegou = False
 def desenharTanque():
-    global tanque_x, tanque_z, anguloTanque, articulacao_1, articulacao_2
+    global tanque_x, tanque_z, anguloTanque, articulacao_1, articulacao_2, FORCA, atirando, bezierTiro, passos, jaPegou
     glPushMatrix()
     glNormal(0,1,0)
     glTranslatef(tanque_x, 0.5, tanque_z)
@@ -363,11 +380,39 @@ def desenharTanque():
     desenhaCubo()
     glTranslatef(1,0,0)
     desenhaCubo()
+    bX, bY, bZ = 0,0,0
+    rad = articulacao_1 * math.pi/180
+    bX = 0
+    bZ = math.cos(rad)
+    bY = -math.sin(rad)
+
+    bX = -.5
+    bY = bY*FORCA
+    bZ = bZ*FORCA
+
+    glPushMatrix()
+    glTranslate(0,.25,0)
+    bezier = Bezier(Ponto(bX,0,0), Ponto(bX, bY, bZ), Ponto(bX,0,bZ*2))
+    bezier.Traca()
+
+    if atirando:
+        if not jaPegou: 
+            bezierTiro = bezier
+            jaPegou = True
+        posicao = bezierTiro.Calcula(passos)
+        desenhaBala(posicao.x, posicao.y, posicao.z)
+        passos += 0.025
+        if passos > 1: 
+            atirando = False
+            jaPegou = False
+    else:
+        passos = 0
+    glPopMatrix()
     
     glPushMatrix()
     glColor(1,0,0)
     glTranslatef(-0.5,0.3,0)
-    glRotatef(270 + articulacao_1,1,0,0)
+    glRotatef(articulacao_1,1,0,0)
     glPushMatrix()
     glScalef(0.3,0.3,1)
     desenhaCilindro()
@@ -376,8 +421,12 @@ def desenharTanque():
     glColor(1,1,0)
     glTranslatef(0,0,0.8)
     glRotatef(articulacao_2,1,0,0)
+    glPushMatrix()
     glScalef(0.16,0.16,1)
     desenhaCilindro()
+    glPopMatrix()
+    glRotatef(270,0,0,1)
+    glRotatef(90,1,0,0)
     glPopMatrix()
     glPopMatrix()
 
@@ -397,7 +446,6 @@ def display():
 
     defineLuz()
     posicUser()
-
     # glPushMatrix()
     # glTranslatef(5,0,35)
     # glScalef(0.1,0.1,0.1)
@@ -452,6 +500,8 @@ oldTime = time.time()
 def animate():
     global nFrames, TempoTotal, AccumDeltaT, oldTime
 
+    
+
     nowTime = time.time()
     dt = nowTime - oldTime
     oldTime = nowTime
@@ -477,13 +527,18 @@ def keyboard(*args):
     global tanque_x, tanque_z, anguloTanque, lxTanque, lzTanque
     global mudou
     global articulacao_1, articulacao_2
+    global atirando
+    global FORCA
     #print (args)
     calculaAngulo = False
     # If escape is pressed, kill everything.
 
     if args[0] == ESCAPE:   # Termina o programa qdo
         os._exit(0)         # a tecla ESC for pressionada
-
+    if args[0] == b'q':
+        FORCA += 1
+    if args[0] == b'e':
+        FORCA -= 1
     if args[0] == b'w':
         obs_x += lx 
         obs_z += lz 
@@ -492,20 +547,15 @@ def keyboard(*args):
         obs_z -= lz
     if args[0] == b'a':
         articulacao_1 += 2
-        pass
-    if args[0] == b'A':
+    if args[0] == b'd':
         articulacao_1 -= 2
-        pass
     if args[0] == b'b':
         articulacao_2 += 2
         pass
     if args[0] == b'B':
         articulacao_2 -= 2
-        pass
-    if args[0] == b'd':
-        pass
     if args[0] == b' ':
-        init()
+        atirando = True
     if args[0] == b't':
         tanque_z += 0.18*lzTanque
         tanque_x += 0.18*lxTanque
@@ -523,9 +573,7 @@ def keyboard(*args):
     if calculaAngulo:   
         lxTanque =   math.sin(anguloTanque*math.pi/180)
         lzTanque =   math.cos(anguloTanque*math.pi/180)
-        # tanque_z = 0
-        # if tanque_x > 0:
-        #     tanque_x -= 1
+
     if args[0] == b'i':
         image.show()
 
@@ -556,10 +604,53 @@ def arrow_keys(a_keys: int, x: int, y: int):
     glutPostRedisplay()
 
 
+start = 0
+anteriorX = 0
+anteriorY = 0
+movendoX = False
+movendoY = False
+first = True
 def mouse(button: int, state: int, x: int, y: int):
+    global obs_y, angle, start, movendoX, movendoY, firstX, firstY
+    print(x, y, state, button)
+    
+    if button == 0 and state == 0:
+        movendoX = True
+    if button == 0 and state == 1:
+        movendoX = False
+        firstX = True
+    if button == 2 and state == 0:
+        movendoY = True
+    if button == 2 and state == 1:
+        movendoY = False
+        firstY = True
+    
+    print(x, y)
+    if button == 3: obs_y += .05
+    if button == 4: obs_y -= .05
     glutPostRedisplay()
 
 def mouseMove(x: int, y: int):
+    global angle, movendoX, movendoY, anteriorX, anteriorY, start, lx, lz, firstX, firstY, obs_y
+    if movendoX:
+        if anteriorX == 0 or firstX: anteriorX = x
+        firstX = False
+        atualX = x
+        deltaX = atualX - anteriorX
+        angle += deltaX/(1920/2)
+        lx =  math.sin(angle)
+        lz = -math.cos(angle)
+        anteriorX = atualX
+    
+    if movendoY:
+        if anteriorY == 0 or firstY: anteriorY = y
+        firstY = False
+        atualY = y
+        deltaY = atualY - anteriorY
+        obs_y -= deltaY/(1080/6)
+        anteriorY = atualY
+
+
     glutPostRedisplay()
 #**********************************************************************
 
@@ -584,9 +675,9 @@ glutReshapeFunc(reshape)
 # glClientWaitSync()
 glutKeyboardFunc(keyboard)
 glutSpecialFunc(arrow_keys)
+glutMouseFunc(mouse)
+glutMotionFunc(mouseMove)
 
-# glutMouseFunc(mouse)
-# glutMotionFunc(mouseMove)
 
 
 try:

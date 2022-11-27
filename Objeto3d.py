@@ -96,7 +96,6 @@ class Tri:
         for tri in self.triangulos:
             triangulo: Triangle = tri[0]
             color = tri[1]
-            # tranform hexa to rgb
             glBegin(GL_TRIANGLES);
             try:
                 r, g, b = Tri.hex_to_rgb(color)
