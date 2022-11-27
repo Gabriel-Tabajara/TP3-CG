@@ -1,0 +1,11 @@
+            # pontoOriginal1.x = cos*bX + sin*0 + tanque_x
+            # pontoOriginal1.y = 0
+            # pontoOriginal1.z = -sin*bX + cos*0 + tanque_z 
+
+            # pontoOriginal2.x = cos*bX + sin*bZ + tanque_x
+            # pontoOriginal2.y = bY
+            # pontoOriginal2.z = -sin*bX + cos*bZ + tanque_z 
+
+            # pontoOriginal3.x = cos*bX + sin*bZ + tanque_x
+            # pontoOriginal3.y = 0
+            # pontoOriginal3.z = -sin*bX + cos*(bZ*2) + tanque_z 

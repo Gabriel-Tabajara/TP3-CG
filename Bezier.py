@@ -38,13 +38,13 @@ class Bezier:
         return P
 
     def Traca(self, color=None):     
-        # if color: glColor3ub(color[0], color[1], color[2])
+        if color: glColor3f(color[0], color[1], color[2])
+        else: glColor3f(0,0,1)
         
         t=0.0
         DeltaT = 1.0/50
         P:Ponto = Ponto
         glBegin(GL_LINE_STRIP)
-        glColor3f(0,0,1)
         
         while(t<1.0):
             P = self.Calcula(t)

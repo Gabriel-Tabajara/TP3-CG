@@ -27,6 +27,9 @@ class Ponto:
         self.y = y
         self.z = z
     
+    def modulo(self):
+        return (self.x**2 + self.y**2 + self.z**2)**0.5
+    
 # Definicao de operadores
 # https://www.programiz.com/python-programming/operator-overloading
     def __add__(self, other):

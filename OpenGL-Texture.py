@@ -46,6 +46,7 @@ look_z = -5
 
 FORCA = 25
 
+
 angle = 60.0
 obs_x = 9.5
 obs_z = 2.4
@@ -61,6 +62,8 @@ anguloTanque = 0
 lxTanque =  math.sin(anguloTanque)
 lzTanque =  math.cos(anguloTanque) 
 mudou = False
+girou = False
+
 
 articulacao_1 = -45
 articulacao_2 = 0
@@ -71,12 +74,10 @@ moto = Objeto3d.Tri("./objects/moto.tri")
 dog = Objeto3d.Tri("./objects/dog.tri")
 
 parede = []
-parede1 = []
 for x in range(0, 25):
     linha = []
     for y in range(0, 15):
-        linha.append(Ponto(x, y, 25))
-        # parede1.append(Ponto(x,y,0))
+        linha.append((Ponto(x, y, 25), True))
     parede.append(linha)
 
 # ***********************************************
@@ -175,12 +176,12 @@ def useTexture (NroDaTextura: int):
 #/ **********************************************************************
 def init():
     # Define a cor do fundo da tela (BRANCO) 
-    glClearColor(0.5, 0.5, 0.5, 1.0)
+    glClearColor(0.5, 0.5, 1, 1.0)
 
     glClearDepth(1.0) 
     glDepthFunc(GL_LESS)
     glEnable(GL_DEPTH_TEST)
-    glEnable (GL_CULL_FACE )
+    # glEnable (GL_CULL_FACE )
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     # Carrega texturas
@@ -335,13 +336,15 @@ def desenhaParede():
     global parede
     for linha in parede:
         for ponto in linha:
+            if not ponto[1]: continue
+            ponto = ponto[0]
             ponto:Ponto
             useTexture(-1)
             desenhaLadrilhoParede(ponto)
-    for ponto in parede1:
-        ponto:Ponto
-        useTexture(0)
-        desenhaLadrilhoParede(ponto)
+    # for ponto in parede1:
+    #     ponto:Ponto
+    #     useTexture(0)
+    #     desenhaLadrilhoParede(ponto)
 
 def desenhaPiso():
     glPushMatrix()
@@ -363,28 +366,41 @@ def desenhaPiso():
 passos = 0
 bezierTiro = None
 jaPegou = False
+pontoOriginal1 = Ponto()
+pontoOriginal2 = Ponto()
+pontoOriginal3 = Ponto()
+newBezier = None
+oldAngle = 0
+diferenca = (0,0)
 def desenharTanque():
-    global tanque_x, tanque_z, anguloTanque, articulacao_1, articulacao_2, FORCA, atirando, bezierTiro, passos, jaPegou
+    global tanque_x, tanque_z, anguloTanque, articulacao_1, articulacao_2, FORCA, atirando, bezierTiro, passos, jaPegou, newBezier
+    global pontoOriginal1, pontoOriginal2, pontoOriginal3
+    global parede
+    global girou, oldAngle, diferenca
+    if not girou: oldAngle = anguloTanque
+   
+        
+
     glPushMatrix()
     glNormal(0,1,0)
     glTranslatef(tanque_x, 0.5, tanque_z)
     glRotatef(anguloTanque, 0, 1, 0)
-    desenhaCubo()
+    # desenhaCubo()
     glTranslatef(1,0,0)
-    desenhaCubo()
+    # desenhaCubo()
     glTranslatef(0,0,1)
-    desenhaCubo()
+    # desenhaCubo()
     glTranslatef(-1,0,0)
-    desenhaCubo()
+    # desenhaCubo()
     glTranslatef(0,0,1)
-    desenhaCubo()
+    # desenhaCubo()
     glTranslatef(1,0,0)
-    desenhaCubo()
-    bX, bY, bZ = 0,0,0
+    # desenhaCubo()
+    radTanque = anguloTanque * math.pi/180
     rad = articulacao_1 * math.pi/180
     bX = 0
-    bZ = math.cos(rad)
     bY = -math.sin(rad)
+    bZ = math.cos(rad)
 
     bX = -.5
     bY = bY*FORCA
@@ -393,16 +409,18 @@ def desenharTanque():
     glPushMatrix()
     glTranslate(0,.25,0)
     bezier = Bezier(Ponto(bX,0,0), Ponto(bX, bY, bZ), Ponto(bX,0,bZ*2))
-    bezier.Traca()
+    cos = math.cos(radTanque)
+    sin = math.sin(radTanque)
 
+    bezier.Traca((1,0,0))
     if atirando:
         if not jaPegou: 
             bezierTiro = bezier
-            jaPegou = True
+            # jaPegou = True
         posicao = bezierTiro.Calcula(passos)
         desenhaBala(posicao.x, posicao.y, posicao.z)
         passos += 0.025
-        if passos > 1: 
+        if passos > 1.05: 
             atirando = False
             jaPegou = False
     else:
@@ -415,7 +433,7 @@ def desenharTanque():
     glRotatef(articulacao_1,1,0,0)
     glPushMatrix()
     glScalef(0.3,0.3,1)
-    desenhaCilindro()
+    # desenhaCilindro()
     glPopMatrix()
     
     glColor(1,1,0)
@@ -423,14 +441,84 @@ def desenharTanque():
     glRotatef(articulacao_2,1,0,0)
     glPushMatrix()
     glScalef(0.16,0.16,1)
-    desenhaCilindro()
+    # desenhaCilindro()
     glPopMatrix()
     glRotatef(270,0,0,1)
     glRotatef(90,1,0,0)
     glPopMatrix()
     glPopMatrix()
 
+    newSen,newCos = 0,0
+    # print(anguloTanque)
+    if girou:
+        oldSen = math.sin(oldAngle * math.pi / 180)
+        oldCos = math.cos(oldAngle * math.pi / 180)
+        
+        newSen = math.sin(anguloTanque * math.pi / 180)
+        newCos = math.cos(anguloTanque * math.pi / 180)
 
+        newX = (-oldCos + newCos)
+        newZ = (-oldSen + newSen)
+        diferenca = (newX+diferenca[0], newZ+diferenca[1])
+        print('------------------------------')
+        print(oldAngle, anguloTanque)
+        print(oldSen, oldCos)
+        print(newSen, newCos)
+        print(diferenca)
+        print('------------------------------')
+        girou = False
+#? AQUI
+    if  not jaPegou:
+        #! bezier = Bezier(Ponto(bX,0,0), Ponto(bX, bY, bZ), Ponto(bX,0,bZ*2))
+
+        # print(newSen, newCos)
+        pontoSoma = Ponto(.5,0.75,2) - Ponto(diferenca[0], 0, diferenca[1])
+
+        tX = tanque_x
+        tY = (-math.sin(rad)) * FORCA
+        tZ = tanque_z + math.cos(rad)*FORCA
+        pontoOriginal1 = Ponto(tanque_x, 0, tanque_z)
+
+        meio = Ponto(tX, 0, tZ)
+
+        vet = meio - pontoOriginal1
+        modulo = vet.modulo()
+
+        posX = math.sin(radTanque)
+        posZ = math.cos(radTanque)
+
+        posX = posX * modulo
+        posZ = posZ * modulo
+
+        pontoOriginal2 = Ponto(posX + tanque_x, tY, posZ + tanque_z)
+        pontoOriginal3 = Ponto(posX*2 + tanque_x, 0, posZ*2 + tanque_z)
+
+        pontoOriginal1 += pontoSoma
+        pontoOriginal2 += pontoSoma
+        pontoOriginal3 += pontoSoma
+
+        newBezier = Bezier(pontoOriginal1, pontoOriginal2, pontoOriginal3)
+        # jaPegou = True
+#? AQUI
+
+    if atirando:
+
+        posicao = newBezier.Calcula(passos)
+        # colisao
+        if(posicao.z > 24 and posicao.z < 26): 
+            parede[int(posicao.x)][int(posicao.y)] = (parede[int(posicao.x)][int(posicao.y)][0], False)
+        desenhaBala(posicao.x, posicao.y, posicao.z)
+    if newBezier: 
+        newBezier.Traca()
+
+
+#*  0  0 3
+#* 10 13 2
+#* 10  0 1
+#* ---------------------------------------------
+#* -0.5  0  0
+#* -0.5 13 10
+#* -0.5  0 21
 # **********************************************************************
 # display()
 # Funcao que exibe os desenhos na tela
@@ -525,7 +613,7 @@ ESCAPE = b'\x1b'
 def keyboard(*args):
     global zoom, look_x, look_z, lx, angle, lz, obs_x, obs_z
     global tanque_x, tanque_z, anguloTanque, lxTanque, lzTanque
-    global mudou
+    global mudou, girou
     global articulacao_1, articulacao_2
     global atirando
     global FORCA
@@ -565,9 +653,11 @@ def keyboard(*args):
     if args[0] == b'f':
         anguloTanque += 1
         calculaAngulo = True
+        girou = True
     if args[0] == b'h':
         anguloTanque -= 1
         calculaAngulo = True
+        girou = True
         
 
     if calculaAngulo:   
@@ -577,11 +667,6 @@ def keyboard(*args):
     if args[0] == b'i':
         image.show()
 
-    print('--------------')
-    print(anguloTanque)
-    print(lxTanque)
-    print(lzTanque)
-    print('--------------')
     # ForÃ§a o redesenho da tela
     glutPostRedisplay()
 
