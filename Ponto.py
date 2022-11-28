@@ -7,7 +7,7 @@
 
 """ Classe Ponto """
 class Ponto:   
-    def __init__(self, x=0,y=0,z=0):
+    def __init__(self, x=0.0,y=0.0,z=0.0):
         self.x = x
         self.y = y
         self.z = z
@@ -58,6 +58,8 @@ class Ponto:
     def __hash__(self) -> int:
         return hash((self.x, self.y, self.z))
 
+    def __str__(self) -> str:
+        return "(" + str(self.x) + ", " +  str(self.y) + ", " + str(self.z) + ")"
 
 
 # ********************************************************************** */
