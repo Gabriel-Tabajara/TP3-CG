@@ -87,6 +87,7 @@ casa = Objeto3d.Tri("./objects/casa.tri")
 moto = Objeto3d.Tri("./objects/moto.tri")
 dog = Objeto3d.Tri("./objects/dog.tri")
 ferrari = Objeto3d.Tri("./objects/ferrari.tri")
+vaca = Objeto3d.Tri("./objects/vaca.tri")
 
 parede = []
 for x in range(0, 25):

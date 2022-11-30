@@ -3,10 +3,6 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from Ponto import Ponto
-import numpy as np
-
-class Objeto3d:
-    pass
 
 class Triangle:
     def __init__(self, a, b, c, normal):
@@ -15,49 +11,15 @@ class Triangle:
         self.c = c
         self.normal = normal
 
-class Tri2:
-    def __init__(self, fileName) -> None:
-        self.vertices = []
-        self.indicies = []
-        self.normal = None
-        verticeDict = dict()
-        verticesSet = set()
-        a = 0
-        pos = 0
-        for line in open(fileName):
-            print(a)
-            a += 1
-            line = line.split()
-            if len(line) < 3: continue
-            p1 = Ponto(float(line[0]), float(line[1]), float(line[2]))
-            p2 = Ponto(float(line[3]), float(line[4]), float(line[5]))
-            p3 = Ponto(float(line[6]), float(line[7]), float(line[8]))
-
-            for p in [p1,p2,p3]:
-                if p not in verticesSet: 
-                    verticesSet.add(p)
-                    verticeDict[p] = pos
-                    self.vertices.append(p.x)
-                    self.vertices.append(p.y)
-                    self.vertices.append(p.z)
-                    self.indicies.append(pos)
-                    pos+=1
-                else:
-                    self.indicies.append(verticeDict[p])
-        self.vertices = np.array(self.vertices, dtype=np.float32)
-        self.indicies = np.array(self.indicies, dtype=np.uint32)
-
-        VBO = glGenBuffers(1, 10)
-        glBindBuffer(GL_ARRAY_BUFFER, VBO)
-        glBufferData(GL_ARRAY_BUFFER, self.vertices.nbytes, self.vertices, GL_STATIC_DRAW)
-
-        glGenBuffers(1)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO)
-        
-
 
 class Tri:
     def __init__(self, fileName) -> None:
+        self.minX = 100000000
+        self.maxX = -100000000
+        self.minY = 100000000
+        self.maxY = -100000000
+        self.minZ = 100000000
+        self.maxZ = -100000000
         self.triangulos = []
         for line in open(fileName):
             line = line.split()
@@ -65,7 +27,24 @@ class Tri:
             p1 = Ponto(float(line[0]), float(line[1]), float(line[2]))
             p2 = Ponto(float(line[3]), float(line[4]), float(line[5]))
             p3 = Ponto(float(line[6]), float(line[7]), float(line[8]))
-            self.triangulos.append((Triangle(p1, p2, p3, self.prodVetUnitario(p1,p2,p3)), line[9]))
+            self.minX = min(self.minX, p1.x, p2.x, p3.x)
+            self.minY = min(self.minY, p1.y, p2.y, p3.y)
+            self.minZ = min(self.minZ, p1.z, p2.z, p3.z)
+            self.maxX = max(self.maxX, p1.x, p2.x, p3.x)
+            self.maxY = max(self.maxY, p1.y, p2.y, p3.y)
+            self.maxZ = max(self.maxZ, p1.z, p2.z, p3.z)
+            try:
+                self.triangulos.append((Triangle(p1, p2, p3, self.prodVetUnitario(p1,p2,p3)), line[9]))
+            except:
+                self.triangulos.append((Triangle(p1, p2, p3, self.prodVetUnitario(p1,p2,p3)), None))
+
+    
+    def colision(self, x, y, z):
+        # use minX, maxX, minY, maxY, minZ, maxZ to check colision
+        if x < self.minX or x > self.maxX: return False
+        if y < self.minY or y > self.maxY: return False
+        if z < self.minZ or z > self.maxZ: return False
+        return True
 
     def hex_to_rgb(value):
         value = value.lstrip('0x')
@@ -97,9 +76,9 @@ class Tri:
     def draw(self):
         for tri in self.triangulos:
             triangulo: Triangle = tri[0]
-            color = tri[1]
             glBegin(GL_TRIANGLES);
             try:
+                color = tri[1]
                 r, g, b = Tri.hex_to_rgb(color)
                 glColor3f(r, g, b)
             except:
@@ -108,11 +87,10 @@ class Tri:
             p2 = triangulo.b
             p3 = triangulo.c
             normal = triangulo.normal
-            # normal = self.prodVetUnitario(p2-p1, p3-p2, p1-p3)
             glNormal3f(normal.x, normal.y, normal.z)
-            # glScalef(0.5,0.5,0.5)
             glVertex3f(p1.x, p1.y, p1.z);
             glVertex3f(p2.x, p2.y, p2.z);
             glVertex3f(p3.x, p3.y, p3.z);
-            # glScalef(2,2,2)
             glEnd();
+
+
