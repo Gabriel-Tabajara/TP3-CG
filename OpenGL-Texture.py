@@ -88,12 +88,16 @@ moto = Objeto3d.Tri("./objects/moto.tri")
 dog = Objeto3d.Tri("./objects/dog.tri")
 ferrari = Objeto3d.Tri("./objects/ferrari.tri")
 vaca = Objeto3d.Tri("./objects/vaca.tri")
+tree = Objeto3d.Tri("./objects/tree.tri")
+tree_1 = Objeto3d.Tri("./objects/tree_1.tri")
+
+cachorros = [(0,1,35,.3), (15,1,28,.5), (10,1,45,.4), (0,1,28,.3), (17,1,29,.3)]
 
 parede = []
 for x in range(0, 25):
     linha = []
     for y in range(0, 15):
-        linha.append((Ponto(x, y, 25), True))
+        linha.append(True)
     parede.append(linha)
 
 # ***********************************************
@@ -339,9 +343,8 @@ def desenhaLadrilho():
     glEnd()
 
 def desenhaLadrilhoParede(ponto:Ponto):
-    global cores, corAtual
-    r,g,b = cores[corAtual%len(cores)]
-    corAtual += 1
+    global cores
+    r,g,b = cores[int(ponto.x + ponto.y)%len(cores)]
     glColor3f(r,g,b) # desenha QUAD em branco, pois vai usa textura
     glBegin ( GL_QUADS )
     glNormal3f(0,0,1)
@@ -368,19 +371,13 @@ def desenhaLadrilhoParede(ponto:Ponto):
 
 # **********************************************************************
 def desenhaParede():
-    glTranslated(0,0,0)
     global parede
-    for linha in parede:
-        for ponto in linha:
-            if not ponto[1]: continue
-            ponto = ponto[0]
-            ponto:Ponto
+    for x in range(len(parede)):
+        for y in range(len(parede[x])):
+            ponto = parede[x][y]
+            if not ponto: continue
             useTexture(-1)
-            desenhaLadrilhoParede(ponto)
-    # for ponto in parede1:
-    #     ponto:Ponto
-    #     useTexture(0)
-    #     desenhaLadrilhoParede(ponto)
+            desenhaLadrilhoParede(Ponto(x,y,25))
 
 def desenhaPiso():
     glPushMatrix()
@@ -414,10 +411,9 @@ def desenharTanque():
     global parede
     global girou, oldAngle, diferenca
     if not girou: oldAngle = anguloTanque
-   
         
     glPushMatrix()
-    glColor(1,1,1)
+    glColor(.5,.5,1)
     glTranslatef(tanque_x, 0.5, tanque_z)
     glRotatef(anguloTanque, 0, 1, 0)
     desenhaCubo()
@@ -498,16 +494,23 @@ def desenharTanque():
         atira(bezierTiro)
         
     else: passos = 0
-    # if bezierTiro: 
-    #     bezierTiro.Traca()
+    if bezierTiro: 
+        bezierTiro.Traca()
 
 acertou = False
 def atira(bezier: Bezier):
-    global passos, parede, jaPegou, atirando, acertou
+    global passos, jaPegou, atirando, acertou, cachorros
     posicao = bezier.Calcula(passos)
     if posicao.z > 24 and posicao.z < 26 and not acertou:
-        # parede[int(posicao.x)][int(posicao.y)] = (parede[int(posicao.x)][int(posicao.y)][0], False)
         acertou = destroiParede(posicao.x, posicao.y)
+    for i in range(len(cachorros)):
+        cachorro = cachorros[i]
+        if cachorro == None: continue
+        x,y,z,scale = cachorro
+        if dog.colision(posicao.x, posicao.y, posicao.z, x, y, z, scale):
+            acertou = True
+            atirando = False
+            cachorros[i] = None
     desenhaBala(posicao.x, posicao.y, posicao.z)
     passos += 0.025
     if passos > 1.05 or acertou:
@@ -518,12 +521,14 @@ def atira(bezier: Bezier):
 def destroiParede(x, y):
     global parede
     x,y = int(x), int(y)
-    acertou = parede[x][y][1]
+    if not isValid(x, y): return False
+    acertou = parede[x][y]
+    if not acertou: return False
     for i in (-1, 0, 1):
         for j in (-1, 0, 1):
             if isValid(x+i, y+j):
-                parede[x+i][y+j] = (parede[x+i][y+j][0], False)
-    if not acertou: return False
+                print(x+i, y+j)
+                parede[x+i][y+j] = False
     return True
 
 def isValid(x, y):
@@ -541,56 +546,35 @@ def display():
     global pos_x, pos_y, pos_z
     global tanque_z
     global look_x, look_y, look_z
-    global dog
+    global dog, cachorros
     # Limpa a tela com  a cor de fundo
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     defineLuz()
     posicUser()
-    glPushMatrix()
-    glTranslatef(5,0,35)
-    glScalef(0.1,0.1,0.1)
-    # drawObj(cactus)
-    glPopMatrix()
+    # for i in range(0,20):
+    #     glPushMatrix()
+    #     glTranslatef(1.5*i + 13,0,42)
+    #     glScalef(0.3,0.3,0.3)
+    #     drawObj(dog)
+    #     glScalef(2,2,2)
+    #     glPopMatrix()
     
-    for i in range(0,20):
+    for cachorro in cachorros:
+        if cachorro == None: continue
         glPushMatrix()
-        glTranslatef(1.5*i + 13,0,42)
-        glScalef(0.3,0.3,0.3)
+        x,y,z,scale = cachorro
+        glTranslatef(x, y, z)
+        glScalef(scale,scale,scale)
         drawObj(dog)
-        glScalef(2,2,2)
         glPopMatrix()
-    
-    # glPushMatrix()
-    # glTranslatef(13,0,42)
-    # glScalef(0.3,0.3,0.3)
-    # drawObj(dog)
-    # glScalef(2,2,2)
-    # glPopMatrix()
-
-
-    # glPushMatrix()
-    # glTranslatef(13,0,0)
-    # glScalef(0.3,0.3,0.3)
-    # drawObj(ferrari)
-    # glScalef(2,2,2)
-    # glPopMatrix()
 
 
     glMatrixMode(GL_MODELVIEW)
     
-
-    # glColor3f(0.0,0.5,0.0) # Amarelo
-    # glPushMatrix()
-    # glTranslatef(look_x, look_y, look_z)
-    # desenhaCubo()
-    # glPopMatrix()
-
     desenhaPiso()
     desenhaParede()
     desenharTanque()
-
-    angulo = angulo + 1
 
     glutSwapBuffers()
 
@@ -775,7 +759,7 @@ def mouseMove(x: int, y: int):
 #**********************************************************************
 
 def drawObj(obj:Objeto3d.Tri):
-    obj.draw()
+    obj.draw(mask=False)
 
 # ***********************************************************************************
 # Programa Principal
