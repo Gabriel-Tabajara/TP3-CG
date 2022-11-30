@@ -34,6 +34,19 @@ from PIL import Image
 from Bezier import Bezier
 import time
 
+corAtual = 0
+cores = [
+    (0, 0, 1),
+    (1, 0, 0),
+    (0, 1, 0),
+    (1, 1, 0),
+    (1, 0, 1),
+    (0, 1, 1),
+    (1, 1, 1),
+    (0.5, 0.5, 0.5),
+    (0, 0, 0)
+]
+
 bezier = Bezier(Ponto(0,0,0), Ponto(0,15,15), Ponto(0,0,30))
 
 image = None
@@ -46,6 +59,7 @@ look_z = -5
 
 FORCA = 25
 
+travado = False
 
 angle = 60.0
 obs_x = 9.5
@@ -72,6 +86,7 @@ cactus = Objeto3d.Tri("./objects/cactus.tri")
 casa = Objeto3d.Tri("./objects/casa.tri")
 moto = Objeto3d.Tri("./objects/moto.tri")
 dog = Objeto3d.Tri("./objects/dog.tri")
+ferrari = Objeto3d.Tri("./objects/ferrari.tri")
 
 parede = []
 for x in range(0, 25):
@@ -188,20 +203,37 @@ def init():
     global texturas 
     texturas += [loadTexture("bricks.jpg")] 
     texturas += [loadTexture("Piso.jpg")] 
+    texturas += [loadTexture("metal.jpg")] 
 # **********************************************************************
 #
 # **********************************************************************
+soltou = False
+cam = 0
 def posicUser():
-    global zoom, look_x, look_y, look_z, obs_z, obs_x, obs_y, lz, lx
+    global zoom, look_x, look_y, look_z, obs_z, obs_x, obs_y, lz, lx, travado, angle
+    global soltou, cam
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity() 
     gluPerspective(60,AspectRatio,0.01,5000) # Projecao perspectiva
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    gluLookAt(obs_x,    look_y,  obs_z,
-              obs_x+lx*10, look_y+obs_y,  obs_z+lz*10,
-              0,1.0,0) 
+    # print(travado)
+    if not travado:
+        gluLookAt(obs_x,       look_y,        obs_z,
+                  obs_x+lx*10, look_y+obs_y,  obs_z+lz*10,
+                0,1.0,0)
+    else:
+        soltou = True
+        if cam == 1:
+            gluLookAt(  12.5,    look_y+5,  -13,
+                        12.5,    look_y,  50,
+                        0,1.0,0)
+        elif cam == 2:
+            gluLookAt(  -25,    look_y+10,  25,
+                        50,    look_y,    25,
+                        0,1.0,0)
+
 
  
 # **********************************************************************
@@ -306,7 +338,10 @@ def desenhaLadrilho():
     glEnd()
 
 def desenhaLadrilhoParede(ponto:Ponto):
-    glColor3f(1,1,1) # desenha QUAD em branco, pois vai usa textura
+    global cores, corAtual
+    r,g,b = cores[corAtual%len(cores)]
+    corAtual += 1
+    glColor3f(r,g,b) # desenha QUAD em branco, pois vai usa textura
     glBegin ( GL_QUADS )
     glNormal3f(0,0,1)
     glTexCoord(0,0)
@@ -380,9 +415,8 @@ def desenharTanque():
     if not girou: oldAngle = anguloTanque
    
         
-
     glPushMatrix()
-    glNormal(0,1,0)
+    glColor(1,1,1)
     glTranslatef(tanque_x, 0.5, tanque_z)
     glRotatef(anguloTanque, 0, 1, 0)
     desenhaCubo()
@@ -396,6 +430,8 @@ def desenharTanque():
     desenhaCubo()
     glTranslatef(1,0,0)
     desenhaCubo()
+    
+    useTexture(-2)
     radTanque = anguloTanque * math.pi/180
     rad = articulacao_1 * math.pi/180
     bX = 0
@@ -406,32 +442,19 @@ def desenharTanque():
     bY = bY*FORCA
     bZ = bZ*FORCA
 
+    # useTexture(-1)
     glPushMatrix()
     glTranslate(0,.25,0)
     bezier = Bezier(Ponto(bX,0,0), Ponto(bX, bY, bZ), Ponto(bX,0,bZ*2))
-
-    # bezier.Traca((1,0,0))
-    # if atirando:
-    #     if not jaPegou: 
-    #         bezierTiro = bezier
-    #         # jaPegou = True
-    #     posicao = bezierTiro.Calcula(passos)
-    #     desenhaBala(posicao.x, posicao.y, posicao.z)
-    #     passos += 0.025
-    #     if passos > 1.05: 
-    #         atirando = False
-    #         jaPegou = False
-    # else:
-    #     passos = 0
 
     glPopMatrix()
     
     glPushMatrix()
     glColor(1,0,0)
-    glTranslatef(-0.5,0.3,0)
+    glTranslatef(-1.05,-0.5,-2)
     glRotatef(articulacao_1,1,0,0)
     glPushMatrix()
-    glScalef(0.3,0.3,1)
+    glScalef(0.3,0.3,2)
     desenhaCilindro()
     glPopMatrix()
     
@@ -439,7 +462,7 @@ def desenharTanque():
     glTranslatef(0,0,0.8)
     glRotatef(articulacao_2,1,0,0)
     glPushMatrix()
-    glScalef(0.16,0.16,1)
+    glScalef(0.16,0.16,2)
     desenhaCilindro()
     glPopMatrix()
     glRotatef(270,0,0,1)
@@ -447,14 +470,7 @@ def desenharTanque():
     glPopMatrix()
     glPopMatrix()
 
-    if  not jaPegou:
-        #! bezier = Bezier(Ponto(bX,0,0), Ponto(bX, bY, bZ), Ponto(bX,0,bZ*2))
-        # pontoSoma = Ponto(0, 0 ,0)
-        pontoSoma = Ponto(.5,.75,2)
-        # pontoSoma = Ponto(math.sin(radTanque)*.5, .75, math.cos(radTanque)*2) 
-        pontoSoma.x =  math.cos(radTanque)*pontoSoma.x + math.sin(radTanque)*pontoSoma.z
-        pontoSoma.z = -math.sin(radTanque)*pontoSoma.x + math.cos(radTanque)*pontoSoma.z
-
+    if not jaPegou:
         tX = tanque_x
         tY = (-math.sin(rad)) * FORCA
         tZ = tanque_z + math.cos(rad)*FORCA
@@ -474,26 +490,15 @@ def desenharTanque():
         pontoOriginal2 = Ponto(posX + tanque_x, tY, posZ + tanque_z)
         pontoOriginal3 = Ponto(posX*2 + tanque_x, 0, posZ*2 + tanque_z)
 
-        pontoOriginal1 += pontoSoma
-        pontoOriginal2 += pontoSoma
-        pontoOriginal3 += pontoSoma
-        
-        print(radTanque)
         bezierTiro = Bezier(pontoOriginal1, pontoOriginal2, pontoOriginal3)
 
     if atirando:
+        jaPegou = True
         atira(bezierTiro)
-        # posicao = bezierTiro.Calcula(passos)
-        # if(posicao.z > 24 and posicao.z < 26): 
-        #     parede[int(posicao.x)][int(posicao.y)] = (parede[int(posicao.x)][int(posicao.y)][0], False)
-        # desenhaBala(posicao.x, posicao.y, posicao.z)
-        # passos += 0.025
-        # if passos > 1.05: 
-        #     atirando = False
-        #     jaPegou = False
+        
     else: passos = 0
-    if bezierTiro: 
-        bezierTiro.Traca()
+    # if bezierTiro: 
+    #     bezierTiro.Traca()
 
 acertou = False
 def atira(bezier: Bezier):
@@ -512,9 +517,18 @@ def atira(bezier: Bezier):
 def destroiParede(x, y):
     global parede
     x,y = int(x), int(y)
-    paredePos = parede[x][y]
-    if not paredePos[1]: return False
-    paredePos = (paredePos[0], False)
+    acertou = parede[x][y][1]
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            if isValid(x+i, y+j):
+                parede[x+i][y+j] = (parede[x+i][y+j][0], False)
+    if not acertou: return False
+    return True
+
+def isValid(x, y):
+    global parede
+    if x < 0 or x >= len(parede): return False
+    if y < 0 or y >= len(parede[0]): return False
     return True
 
 # **********************************************************************
@@ -532,24 +546,32 @@ def display():
 
     defineLuz()
     posicUser()
-    # glPushMatrix()
-    # glTranslatef(5,0,35)
-    # glScalef(0.1,0.1,0.1)
+    glPushMatrix()
+    glTranslatef(5,0,35)
+    glScalef(0.1,0.1,0.1)
     # drawObj(cactus)
-    # glPopMatrix()
+    glPopMatrix()
     
-    # for i in range(0,20):
-    #     glPushMatrix()
-    #     glTranslatef(1.5*i + 13,0,42)
-    #     glScalef(0.3,0.3,0.3)
-    #     drawObj(dog)
-    #     glScalef(2,2,2)``
-    #     glPopMatrix()
+    for i in range(0,20):
+        glPushMatrix()
+        glTranslatef(1.5*i + 13,0,42)
+        glScalef(0.3,0.3,0.3)
+        drawObj(dog)
+        glScalef(2,2,2)
+        glPopMatrix()
     
     # glPushMatrix()
     # glTranslatef(13,0,42)
     # glScalef(0.3,0.3,0.3)
     # drawObj(dog)
+    # glScalef(2,2,2)
+    # glPopMatrix()
+
+
+    # glPushMatrix()
+    # glTranslatef(13,0,0)
+    # glScalef(0.3,0.3,0.3)
+    # drawObj(ferrari)
     # glScalef(2,2,2)
     # glPopMatrix()
 
@@ -613,11 +635,23 @@ def keyboard(*args):
     global tanque_x, tanque_z, anguloTanque, lxTanque, lzTanque
     global mudou, girou
     global articulacao_1, articulacao_2
-    global atirando
+    global atirando, travado, cam
     global FORCA
     #print (args)
     calculaAngulo = False
     # If escape is pressed, kill everything.
+    print(args[0])
+    if args[0] == b'1':
+        cam = 1
+        travado = True
+    if args[0] == b'2':
+        cam = 2
+        travado = True
+    
+    if args[0] == b'3':
+        travado = False
+        # cam = 0
+
 
     if args[0] == ESCAPE:   # Termina o programa qdo
         os._exit(0)         # a tecla ESC for pressionada
@@ -699,7 +733,9 @@ def mouse(button: int, state: int, x: int, y: int):
     
     if button == 0 and state == 0:
         movendoX = True
+        movendoY = True
     if button == 0 and state == 1:
+        movendoY = True
         movendoX = False
         firstX = True
     if button == 2 and state == 0:

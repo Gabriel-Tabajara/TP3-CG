@@ -9,15 +9,17 @@ class Objeto3d:
     pass
 
 class Triangle:
-    def __init__(self, a, b, c):
+    def __init__(self, a, b, c, normal):
         self.a = a
         self.b = b
         self.c = c
+        self.normal = normal
 
 class Tri2:
     def __init__(self, fileName) -> None:
         self.vertices = []
         self.indicies = []
+        self.normal = None
         verticeDict = dict()
         verticesSet = set()
         a = 0
@@ -63,7 +65,7 @@ class Tri:
             p1 = Ponto(float(line[0]), float(line[1]), float(line[2]))
             p2 = Ponto(float(line[3]), float(line[4]), float(line[5]))
             p3 = Ponto(float(line[6]), float(line[7]), float(line[8]))
-            self.triangulos.append((Triangle(p1, p2, p3), line[9]))
+            self.triangulos.append((Triangle(p1, p2, p3, self.prodVetUnitario(p1,p2,p3)), line[9]))
 
     def hex_to_rgb(value):
         value = value.lstrip('0x')
@@ -105,7 +107,8 @@ class Tri:
             p1 = triangulo.a
             p2 = triangulo.b
             p3 = triangulo.c
-            normal = self.prodVetUnitario(p2-p1, p3-p2, p1-p3)
+            normal = triangulo.normal
+            # normal = self.prodVetUnitario(p2-p1, p3-p2, p1-p3)
             glNormal3f(normal.x, normal.y, normal.z)
             # glScalef(0.5,0.5,0.5)
             glVertex3f(p1.x, p1.y, p1.z);
